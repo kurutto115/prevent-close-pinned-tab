@@ -1,0 +1,10 @@
+{
+	"id": "prevent-close-pinned-tab",
+	"name": "Prevent Close Pinned Tab",
+	"version": "1.0.0",
+	"minAppVersion": "0.12.0",
+	"description": "Prevents closing of pinned tabs.",
+	"author": "kurutto115",
+	"authorUrl": "https://kurutto115.hatenablog.com/",
+	"isDesktopOnly": false
+}

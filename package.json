@@ -1,0 +1,19 @@
+{
+  "name": "obsidian-prevent-close-pinned-tab-plugin",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc -noEmit -skipLibCheck && esbuild main.ts --bundle --external:obsidian --format=cjs --outfile=main.js",
+    "dev": "npm run build -- --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "description": "",
+  "devDependencies": {
+    "@types/node": "^24.0.15",
+    "esbuild": "^0.25.7",
+    "obsidian": "^1.8.7",
+    "typescript": "^5.8.3"
+  }
+}

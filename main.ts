@@ -9,7 +9,8 @@ export default class PreventClosePinnedTabPlugin extends Plugin {
 		// Wait for workspace to be ready before accessing commands
 		this.app.workspace.onLayoutReady(() => {
 			// Store the original close command callback
-			const closeCommand = this.app.commands.commands['workspace:close'];
+			const commands = (this.app as any).commands;
+			const closeCommand = commands?.['workspace:close'];
 			if (closeCommand) {
 				this.originalCloseCallback = closeCommand.callback;
 				
@@ -18,7 +19,7 @@ export default class PreventClosePinnedTabPlugin extends Plugin {
 					const activeLeaf = this.app.workspace.activeLeaf;
 					
 					// If there's an active leaf and it's pinned, prevent closing
-					if (activeLeaf && activeLeaf.getViewState().state.pinned) {
+					if (activeLeaf && activeLeaf.getViewState()?.state?.pinned) {
 						return;
 					}
 					
@@ -33,7 +34,8 @@ export default class PreventClosePinnedTabPlugin extends Plugin {
 
 	onunload() {
 		// Restore the original close command callback
-		const closeCommand = this.app.commands.commands['workspace:close'];
+		const commands = (this.app as any).commands;
+		const closeCommand = commands?.['workspace:close'];
 		if (closeCommand && this.originalCloseCallback) {
 			closeCommand.callback = this.originalCloseCallback;
 		}

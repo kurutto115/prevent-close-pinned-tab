@@ -1,29 +1,43 @@
-import { Plugin, WorkspaceLeaf, Notice } from 'obsidian';
-
-// Variable to store the original detach method
-const originalDetach = WorkspaceLeaf.prototype.detach;
+import { Plugin, Notice } from 'obsidian';
 
 export default class PreventClosePinnedTabPlugin extends Plugin {
+	private originalCloseCallback: (() => void) | null = null;
+
 	onload() {
 		new Notice('Prevent Close Pinned Tab Loaded!');
 
-		// Override WorkspaceLeaf.prototype.detach with our custom function
-		WorkspaceLeaf.prototype.detach = function(...args: any[]) {
-			const leaf = this as any; // 'this' refers to an instance of WorkspaceLeaf
-
-			// If the leaf is pinned, interrupt the process without doing anything
-			if (leaf.pinned) {
-				return;
+		// Wait for workspace to be ready before accessing commands
+		this.app.workspace.onLayoutReady(() => {
+			// Store the original close command callback
+			const closeCommand = this.app.commands.commands['workspace:close'];
+			if (closeCommand) {
+				this.originalCloseCallback = closeCommand.callback;
+				
+				// Override the close command callback
+				closeCommand.callback = () => {
+					const activeLeaf = this.app.workspace.activeLeaf;
+					
+					// If there's an active leaf and it's pinned, prevent closing
+					if (activeLeaf && activeLeaf.getViewState().state.pinned) {
+						return;
+					}
+					
+					// If not pinned or no active leaf, execute original behavior
+					if (this.originalCloseCallback) {
+						this.originalCloseCallback();
+					}
+				};
 			}
-
-			// If not pinned, call the original detach method
-			return originalDetach.apply(this, args);
-		};
+		});
 	}
 
-		onunload() {
-			// When the plugin is disabled, be sure to restore the original method
-			WorkspaceLeaf.prototype.detach = originalDetach;
-			new Notice('Prevent Close Pinned Tab Unloaded!');
+	onunload() {
+		// Restore the original close command callback
+		const closeCommand = this.app.commands.commands['workspace:close'];
+		if (closeCommand && this.originalCloseCallback) {
+			closeCommand.callback = this.originalCloseCallback;
 		}
+		
+		new Notice('Prevent Close Pinned Tab Unloaded!');
 	}
+}

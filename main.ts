@@ -1,27 +1,43 @@
-import { Plugin } from 'obsidian';
+import { Plugin, WorkspaceLeaf } from 'obsidian';
 
 export default class PreventClosePinnedTabPlugin extends Plugin {
+    // 以前にピン留めされていたタブの状態を追跡するためのSet
+    private previouslyPinnedLeaves: WeakSet<WorkspaceLeaf> = new WeakSet();
 
-	onload() {
-		this.registerDomEvent(document, 'keydown', (evt: KeyboardEvent) => {
-			// --- 検証用ログ ---
-			console.log(`Keydown event fired: ${evt.key}, Ctrl: ${evt.ctrlKey}, Meta: ${evt.metaKey}`);
-			// --- 検証用ログ終了 ---
+    onload() {
+        this.app.workspace.onLayoutReady(() => {
+            this.updatePinnedState();
 
-			// Check for Ctrl/Cmd + W
-			if ((evt.ctrlKey || evt.metaKey) && evt.key.toLowerCase() === 'w') {
-				const activeLeaf = (this.app.workspace as any).activeLeaf;
+            // レイアウトの変更（タブの開閉、ピン留め状態の変更など）を監視
+            this.registerEvent(this.app.workspace.on('layout-change', () => {
+                this.app.workspace.iterateAllLeaves(leaf => {
+                    const isPinned = leaf.getViewState()?.state?.pinned;
+                    const wasPinned = this.previouslyPinnedLeaves.has(leaf);
 
-				// If there is an active leaf and it is pinned, prevent the default action
-				if (activeLeaf && activeLeaf.getViewState()?.state?.pinned) {
-					evt.preventDefault();
-					evt.stopPropagation();
-				}
-			}
-		}, true); // <--- キャプチャフェーズで実行するためにtrueを追加
-	}
+                    // 以前ピン留めされていたのに、現在ピン留めされていない場合
+                    if (wasPinned && !isPinned) {
+                        // 即座に再度ピン留めする
+                        leaf.setPinned(true);
+                    }
+                });
 
-	onunload() {
-		// All registered DOM events are automatically cleaned up by Obsidian when the plugin is disabled.
-	}
+                // 現在の状態を更新
+                this.updatePinnedState();
+            }));
+        });
+    }
+
+    // 現在のすべてのタブのピン留め状態を記録するヘルパー関数
+    updatePinnedState() {
+        this.previouslyPinnedLeaves = new WeakSet();
+        this.app.workspace.iterateAllLeaves(leaf => {
+            if (leaf.getViewState()?.state?.pinned) {
+                this.previouslyPinnedLeaves.add(leaf);
+            }
+        });
+    }
+
+    onunload() {
+        // クリーンアップは不要
+    }
 }

@@ -1,57 +1,23 @@
-import { Plugin, Notice } from 'obsidian';
+import { Plugin, WorkspaceLeaf } from 'obsidian';
 
 export default class PreventClosePinnedTabPlugin extends Plugin {
-	private originalCloseCallback: (() => void) | null = null;
 
 	onload() {
-		new Notice('Prevent Close Pinned Tab Loaded!');
+		this.registerDomEvent(document, 'keydown', (evt: KeyboardEvent) => {
+			// Check for Ctrl/Cmd + W
+			if ((evt.ctrlKey || evt.metaKey) && evt.key.toLowerCase() === 'w') {
+				const activeLeaf = this.app.workspace.activeLeaf;
 
-		// Wait for workspace to be ready before accessing commands
-		this.app.workspace.onLayoutReady(() => {
-			// 500ミリ秒待ってからコマンドを探しに行く
-			setTimeout(() => {
-				// Store the original close command callback
-				const closeCommand = (this.app as any).commands?.commands?.['workspace:close'];
-				if (closeCommand) {
-					new Notice('Command "workspace:close" found. Overriding callback.');
-					this.originalCloseCallback = closeCommand.callback;
-					
-					// Override the close command callback
-					closeCommand.callback = () => {
-						const activeLeaf = (this.app.workspace as any).activeLeaf;
-						
-						// --- ここから追加 ---
-						if (activeLeaf) {
-							new Notice(`Leaf detected. Pinned: ${activeLeaf.getViewState()?.state?.pinned}`);
-						} else {
-							new Notice('No active leaf.');
-						}
-						// --- ここまで追加 ---
-
-						// If there's an active leaf and it's pinned, prevent closing
-						if (activeLeaf && activeLeaf.getViewState()?.state?.pinned) {
-							return;
-						}
-						
-						// If not pinned or no active leaf, execute original behavior
-						if (this.originalCloseCallback) {
-							this.originalCloseCallback();
-						}
-					};
-				} else {
-					new Notice('Error: Command "workspace:close" NOT found.');
+				// If there is an active leaf and it is pinned, prevent the default action
+				if (activeLeaf && activeLeaf.getViewState()?.state?.pinned) {
+					evt.preventDefault();
+					evt.stopPropagation();
 				}
-			}, 500);
+			}
 		});
 	}
 
 	onunload() {
-		// Restore the original close command callback
-		const closeCommand = (this.app as any).commands?.commands?.['workspace:close'];
-		if (closeCommand && this.originalCloseCallback) {
-			closeCommand.callback = this.originalCloseCallback;
-		}
-		
-		new Notice('Prevent Close Pinned Tab Unloaded!');
+		// All registered DOM events are automatically cleaned up by Obsidian when the plugin is disabled.
 	}
 }

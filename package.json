@@ -1,6 +1,6 @@
 {
   "name": "obsidian-prevent-close-pinned-tab-plugin",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "main": "index.js",
   "scripts": {
     "build": "tsc -noEmit -skipLibCheck && esbuild main.ts --bundle --external:obsidian --format=cjs --outfile=main.js",

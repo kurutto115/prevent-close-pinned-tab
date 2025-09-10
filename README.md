@@ -12,12 +12,6 @@ Obsidianではピン留めされたタブを閉じようとすると、タブは
 
 ## 機能 Features
 
-### ピン留めタブの保護 Protection of Pinned Tabs
-- **Prevents closing pinned tabs**: When you try to close a pinned tab, it shows a notification and keeps the tab open.
-  （ピン留めされたタブを閉じようとすると、通知を表示してタブを開いたままにします。）
-- **Includes all close operations**: Works with mouse clicks, keyboard shortcuts, and command palette.
-  （マウスクリック、キーボードショートカット、コマンドパレットなど、すべての閉じる操作に対応します。）
-
 ### クールダウン機能 Cooldown Feature
 - **3-second cooldown after unpinning**: When you unpin a tab, you cannot close it for 3 seconds to prevent accidental closure.
   （ピン留めを解除すると、誤操作を防ぐために3秒間そのタブを閉じられません。）

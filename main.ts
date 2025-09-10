@@ -13,7 +13,17 @@ export default class PreventClosePinnedTabPlugin extends Plugin {
     this.originalLeafMethods = new WeakMap();
     this.cooldownLeaves = new WeakMap();
 
+    // 既存のタブにパッチを適用
     this.app.workspace.iterateAllLeaves(this.patchLeaf.bind(this));
+
+    // 新しいタブが開かれたときにパッチを適用するためにイベントリスナーを登録
+    this.registerEvent(this.app.workspace.on('layout-change', () => {
+      this.app.workspace.iterateAllLeaves((leaf) => {
+        if (!this.originalLeafMethods.has(leaf)) {
+          this.patchLeaf(leaf);
+        }
+      });
+    }));
   }
 
   onunload() {

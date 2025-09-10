@@ -77,7 +77,6 @@ export default class PreventClosePinnedTabPlugin extends Plugin {
     leaf.detach = () => {
       if (this.cooldownLeaves.has(leaf)) {
         new Notice('ピン留め解除直後のため、まだタブを閉じられません。');
-        originalSetPinned.call(leaf, true);
         return;
       }
       originalDetach.call(leaf);

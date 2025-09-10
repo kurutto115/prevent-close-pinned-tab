@@ -6,6 +6,7 @@ export default class PreventClosePinnedTabPlugin extends Plugin {
     detach: () => void; 
   }>;
   cooldownLeaves: WeakMap<WorkspaceLeaf, boolean>;
+  private cooldownTimeouts: Map<string, NodeJS.Timeout> = new Map();
 
   onload() {
     console.log('Loading Prevent Close Pinned Tab plugin');
@@ -28,6 +29,13 @@ export default class PreventClosePinnedTabPlugin extends Plugin {
 
   onunload() {
     console.log('Unloading Prevent Close Pinned Tab plugin');
+    
+    // 全てのタイムアウトをクリア
+    for (const timeout of this.cooldownTimeouts.values()) {
+      clearTimeout(timeout);
+    }
+    this.cooldownTimeouts.clear();
+    
     this.app.workspace.iterateAllLeaves(this.unpatchLeaf.bind(this));
   }
 
@@ -50,9 +58,19 @@ export default class PreventClosePinnedTabPlugin extends Plugin {
       if (!pinned) {
         this.cooldownLeaves.set(leaf, true);
         new Notice('ピン留めを解除しました。3秒間はタブを閉じられません。');
-        setTimeout(() => {
+        
+        // leafにユニークなキーを作成してタイムアウトを管理し、メモリリークを防止
+        const leafKey = this.getLeafKey(leaf);
+        if (this.cooldownTimeouts.has(leafKey)) {
+          clearTimeout(this.cooldownTimeouts.get(leafKey)!);
+        }
+        
+        const timeout = setTimeout(() => {
           this.cooldownLeaves.delete(leaf);
+          this.cooldownTimeouts.delete(leafKey);
         }, 3000);
+        
+        this.cooldownTimeouts.set(leafKey, timeout);
       }
     };
 
@@ -72,6 +90,18 @@ export default class PreventClosePinnedTabPlugin extends Plugin {
       leaf.setPinned = WorkspaceLeaf.prototype.setPinned;
       leaf.detach = WorkspaceLeaf.prototype.detach;
       this.originalLeafMethods.delete(leaf);
+      
+      // 関連するタイムアウトをクリア
+      const leafKey = this.getLeafKey(leaf);
+      if (this.cooldownTimeouts.has(leafKey)) {
+        clearTimeout(this.cooldownTimeouts.get(leafKey)!);
+        this.cooldownTimeouts.delete(leafKey);
+      }
     }
+  }
+
+  private getLeafKey(leaf: WorkspaceLeaf): string {
+    // leafのメモリアドレスをキーとして使用
+    return leaf.constructor.name + '_' + (leaf as any).containerEl?.id || 'unknown';
   }
 }
